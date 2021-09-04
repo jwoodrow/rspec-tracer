@@ -1,6 +1,9 @@
 name: lint-and-specs
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - 'blabla'
 
 jobs:
   main:
