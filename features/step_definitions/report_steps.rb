@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'msgpack'
+
 Then('The RSpecTracer should print the information') do |expected_output|
   output = last_command_started.output.lines
     .map(&:strip)
@@ -18,34 +20,34 @@ Then('The RSpecTracer report should have been generated') do
   steps %(
     Then a directory named "#{@cache_dir}" should exist
     And the following files should exist:
-      | #{@cache_dir}/last_run.json                       |
-      | #{@cache_dir}/#{@run_id}/all_examples.json        |
-      | #{@cache_dir}/#{@run_id}/all_files.json           |
-      | #{@cache_dir}/#{@run_id}/dependency.json          |
-      | #{@cache_dir}/#{@run_id}/examples_coverage.json   |
-      | #{@cache_dir}/#{@run_id}/failed_examples.json     |
-      | #{@cache_dir}/#{@run_id}/pending_examples.json    |
-      | #{@cache_dir}/#{@run_id}/reverse_dependency.json  |
+      | #{@cache_dir}/last_run.#{RSpecTracer.cache_serializer::EXTENSION}                       |
+      | #{@cache_dir}/#{@run_id}/all_examples.#{RSpecTracer.cache_serializer::EXTENSION}        |
+      | #{@cache_dir}/#{@run_id}/all_files.#{RSpecTracer.cache_serializer::EXTENSION}           |
+      | #{@cache_dir}/#{@run_id}/dependency.#{RSpecTracer.cache_serializer::EXTENSION}          |
+      | #{@cache_dir}/#{@run_id}/examples_coverage.#{RSpecTracer.cache_serializer::EXTENSION}   |
+      | #{@cache_dir}/#{@run_id}/failed_examples.#{RSpecTracer.cache_serializer::EXTENSION}     |
+      | #{@cache_dir}/#{@run_id}/pending_examples.#{RSpecTracer.cache_serializer::EXTENSION}    |
+      | #{@cache_dir}/#{@run_id}/reverse_dependency.#{RSpecTracer.cache_serializer::EXTENSION}  |
   )
 end
 
 Then('The last run report should have correct details') do |report_json|
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/last_run.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/last_run.#{RSpecTracer.cache_serializer::EXTENSION}"))
     attrs = %w[run_id actual_count example_count skipped_examples failed_examples pending_examples]
     report = report.slice(*attrs)
 
-    expect(report).to eq(JSON.parse(report_json))
+    expect(report).to eq(RSpecTracer.cache_serializer.deserialize(report_json))
   end
 end
 
 Then('The all examples report should have correct details') do
   project_dir = File.dirname(__FILE__)
-  data_file = File.join(project_dir, "../#{@data_dir}/all_examples.json")
-  data = JSON.parse(File.read(data_file))
+  data_file = File.join(project_dir, "../#{@data_dir}/all_examples.#{RSpecTracer.cache_serializer::EXTENSION}")
+  data = RSpecTracer.cache_serializer.deserialize(File.read(data_file))
 
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/all_examples.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/all_examples.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report.keys.sort).to eq(data.keys.sort)
 
@@ -59,7 +61,7 @@ Then('The all files report should have correct details') do |table|
   data = table.hashes.map { |a| [a['file_name'], a['file_digest']] }.to_h
 
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/all_files.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/all_files.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report.keys.sort).to eq(data.keys.sort)
 
@@ -71,7 +73,7 @@ end
 
 Then('There should be no flaky examples') do
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/flaky_examples.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/flaky_examples.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report).to eq([])
   end
@@ -79,7 +81,7 @@ end
 
 Then('The flaky example report should have correct details') do
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/flaky_examples.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/flaky_examples.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report).to eq(%w[c25a9aa240c4a72810d9ccfc0e2c10ad 9479ac3d1030d06371c69081856ce7e0])
   end
@@ -87,7 +89,7 @@ end
 
 Then('The failed example report should have correct details') do
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/failed_examples.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/failed_examples.#{RSpecTracer.cache_serializer::EXTENSION}"))
     example = case @project
               when 'rails_app'
                 ['338f77315d8f7c01ea5551cd0759b110']
@@ -109,7 +111,7 @@ end
 
 Then('The pending example report should have correct details') do
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/pending_examples.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/pending_examples.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report).to eq(['94cd4d0e1d9ef63237421fe02085eb9a'])
   end
@@ -117,11 +119,11 @@ end
 
 Then('The dependency report should have correct details') do
   project_dir = File.dirname(__FILE__)
-  data_file = File.join(project_dir, "../#{@data_dir}/dependency.json")
-  data = JSON.parse(File.read(data_file))
+  data_file = File.join(project_dir, "../#{@data_dir}/dependency.#{RSpecTracer.cache_serializer::EXTENSION}")
+  data = RSpecTracer.cache_serializer.deserialize(File.read(data_file))
 
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/dependency.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/dependency.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report.keys.sort).to eq(data.keys.sort)
 
@@ -132,7 +134,7 @@ Then('The dependency report should have correct details') do
     dependency_files = Set.new
     report.each_value { |files| dependency_files |= files }
 
-    all_files = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/all_files.json")).keys.to_set
+    all_files = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/all_files.#{RSpecTracer.cache_serializer::EXTENSION}")).keys.to_set
 
     expect(dependency_files).to eq(all_files)
   end
@@ -140,11 +142,11 @@ end
 
 Then('The reverse dependency report should have correct details') do
   project_dir = File.dirname(__FILE__)
-  data_file = File.join(project_dir, "../#{@data_dir}/reverse_dependency.json")
-  data = JSON.parse(File.read(data_file))
+  data_file = File.join(project_dir, "../#{@data_dir}/reverse_dependency.#{RSpecTracer.cache_serializer::EXTENSION}")
+  data = RSpecTracer.cache_serializer.deserialize(File.read(data_file))
 
   cd('.') do
-    report = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/reverse_dependency.json"))
+    report = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/reverse_dependency.#{RSpecTracer.cache_serializer::EXTENSION}"))
 
     expect(report.keys.sort).to eq(data.keys.sort)
 
@@ -152,7 +154,7 @@ Then('The reverse dependency report should have correct details') do
       expect(dependency).to eq(data[example_id])
     end
 
-    all_files = JSON.parse(File.read("#{@cache_dir}/#{@run_id}/all_files.json")).keys.sort
+    all_files = RSpecTracer.cache_serializer.deserialize(File.read("#{@cache_dir}/#{@run_id}/all_files.#{RSpecTracer.cache_serializer::EXTENSION}")).keys.sort
 
     expect(report.keys.sort).to eq(all_files)
   end
