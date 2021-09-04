@@ -5,7 +5,7 @@ on:
     branches: [ 'main' ]
   pull_request:
     branches:
-      - something_something
+      - blabla
 
 concurrency:
   group: ${GITHUB_REF#refs/heads/}-rails-1
