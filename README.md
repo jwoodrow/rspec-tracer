@@ -227,6 +227,49 @@ make sure to provide the test suite id.
 $ TEST_SUITE_ID=1 bundle exec rake rspec_tracer:remote_cache:upload
 ```
 
+## Serializers
+
+You can configure the serialization for the cache using either the `cache_serializer` option or setting `CACHE_SERIALIZER` in your ENV
+
+### JSON
+
+This is the default serializer and uses `JSON.pretty_generate` and `JSON.parse`, it has the advantage of being human readable but it is also larger and slower to read from and write to than the other two serializers. If you want to explicitly enable this serializer the value you need to set `cache_serializer` to is `json`
+
+### Marshal
+
+This uses ruby's `Marshal.dump` and `Marshal.load` methods. It is the lightest of the 3 serializers but is only slightly faster as `JSON`. To enable this serialiser the value you need to set `cache_serializer` to is `marshal`
+
+### MessagePack
+
+This uses `MessagePack.pack` and `MessagePack.unpack` to handle serialization. It is the sweetspot when it comes to size and performance. It is not as light as `Marshal` but still much lighter than `JSON` whilst still being faster than both.
+
+### Adding new serializers
+
+If you wish to add a new serializer you need to create a new class which will inherit `RSpecTracer::Serializer` and the class name needs to end in `Serializer`. It will need to implement a `serialize` and `deserialize` method and also set both an `EXTENSION` and a `ENCODING` constant.
+
+```ruby
+module RSpecTracer
+  class MyCustomSerializer < Serializer
+    ENCODING = Encoding::BINARY
+    EXTENSION = 'my_ext'
+
+    class << self
+      def serialize(object)
+        # converting any given object to file content
+      end
+
+      def deserialize(input)
+        # converting any given file content back to an object
+      end
+    end
+  end
+end
+```
+
+You will want this to always be true `deserialize(serialize(object)) == object` for `RSpecTracer` to work with your serializer.
+
+Then to use your custom serializer you'll need to specify your serializer's name in `camel_case`. So in the given example I would set the `cache_serializer` to `my_custom`
+
 ## Sample Reports
 
 You get the following three reports:
