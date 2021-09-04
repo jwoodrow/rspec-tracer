@@ -4,6 +4,8 @@ on:
   push:
     branches: [ 'main' ]
   pull_request:
+    branches:
+      - something_something
 
 concurrency:
   group: ${GITHUB_REF#refs/heads/}-rails-2
