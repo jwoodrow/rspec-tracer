@@ -2,10 +2,6 @@ name: lint-and-specs
 
 on: [push, pull_request]
 
-concurrency:
-  group: ${GITHUB_REF#refs/heads/}
-  cancel-in-progress: true
-
 jobs:
   main:
     name: ruby-${{ matrix.ruby }}-lint-and-specs
