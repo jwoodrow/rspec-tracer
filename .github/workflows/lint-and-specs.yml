@@ -1,11 +1,6 @@
 name: lint-and-specs
 
-on:
-  push:
-    branches: [ 'main' ]
-  pull_request:
-    branches:
-      - blabla
+on: [push, pull_request]
 
 concurrency:
   group: ${GITHUB_REF#refs/heads/}

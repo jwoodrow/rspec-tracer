@@ -1,11 +1,6 @@
 name: rails-5-project
 
-on:
-  push:
-    branches: [ 'main' ]
-  pull_request:
-    branches:
-      - blabla
+oon: [push, pull_request]
 
 concurrency:
   group: ${GITHUB_REF#refs/heads/}-rails-1
